@@ -62,7 +62,7 @@ describe('ops', () => {
     });
 });
 
-describe('response', () => {
+describe('log', () => {
     it('Event is formatted as expected', (done) => {
         const testEvent = {
             event: 'log',
