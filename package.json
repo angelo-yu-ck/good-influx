@@ -25,7 +25,7 @@
     "eslint-plugin-hapi": "^4.0.0",
     "eslint-plugin-promise": "^3.4.0",
     "eslint-plugin-standard": "^2.0.1",
-    "lab": "10.x.x"
+    "lab": "^10.9.0"
   },
   "engines": {
     "node": ">=4.0.0"
