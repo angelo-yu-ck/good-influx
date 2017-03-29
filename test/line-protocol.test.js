@@ -19,9 +19,9 @@ const getExpectedMessage = (ports, metadata) => {
     const eventHost = 'host=myservice.awesome.com,pid=9876';
     const loadOpsEvents = ports.map((port) => {
         return [
-            `ops_requests,${eventHost} port=${port},requestsTotal=94,requestsDisconnects=1,requests200=61 1485996802647000000`,
-            `ops_concurrents,${eventHost} port=${port},concurrents=23 1485996802647000000`,
-            `ops_responseTimes,${eventHost} port=${port},avg=990,max=1234 1485996802647000000`,
+            `ops_requests,${eventHost},port=${port} requestsTotal=94,requestsDisconnects=1,requests200=61 1485996802647000000`,
+            `ops_concurrents,${eventHost},port=${port} concurrents=23 1485996802647000000`,
+            `ops_responseTimes,${eventHost},port=${port} avg=990,max=1234 1485996802647000000`,
             `ops_sockets,${eventHost} httpTotal=19,httpsTotal=49 1485996802647000000`
         ].join('\n');
     });
