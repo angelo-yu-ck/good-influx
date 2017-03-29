@@ -74,7 +74,7 @@ describe('log', () => {
             pid: testPid
         };
         const formattedLogEvent = LineProtocol.format(testEvent, {});
-        const expectedLogEvent = `log,host=${testHost},pid=${testPid} data="Things are good",tags="info,request" 1485996802647000000`
+        const expectedLogEvent = `log,host=${testHost},pid=${testPid} data="Things are good",tags="info,request" 1485996802647000000`;
         expect(formattedLogEvent).to.equal(expectedLogEvent);
         done();
     });
