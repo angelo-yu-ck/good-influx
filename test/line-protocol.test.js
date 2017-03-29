@@ -12,26 +12,28 @@ const expect = Code.expect;
 
 const testHost = 'myservice.awesome.com';
 const testPid = 9876;
+const testTimestamp = 1485996802647;
 
 const getExpectedMessage = (ports, metadata) => {
     const plusMetadata = metadata || '';
     /* eslint max-len: ["error", 440, 4] */
     const eventHost = `host=${testHost},pid=${testPid}`;
-    const expectedBaseMessage = `ops,${eventHost} os.cpu1m=3.05078125,os.cpu5m=2.11279296875,os.cpu15m=1.625,os.freemem=147881984i,os.totalmem=6089818112i,os.uptime=23489i,proc.delay=32.29,proc.heapTotal=47271936i,proc.heapUsed=26825384i,proc.rss=64290816i,proc.uptime=22.878${plusMetadata} 1485996802647000000`;
+    const expectedTimestamp = `${testTimestamp}000000`;
+    const expectedBaseMessage = `ops,${eventHost} os.cpu1m=3.05078125,os.cpu5m=2.11279296875,os.cpu15m=1.625,os.freemem=147881984i,os.totalmem=6089818112i,os.uptime=23489i,proc.delay=32.29,proc.heapTotal=47271936i,proc.heapUsed=26825384i,proc.rss=64290816i,proc.uptime=22.878${plusMetadata} ${expectedTimestamp}`;
     const loadOpsEvents = ports.map((port) => {
         return [
-            `ops_requests,${eventHost},port=${port} requestsTotal=94,requestsDisconnects=1,requests200=61`,
-            `ops_concurrents,${eventHost},port=${port} concurrents=23`,
-            `ops_responseTimes,${eventHost},port=${port} avg=990,max=1234`,
-            `ops_sockets,${eventHost},port=${port} httpTotal=19,httpsTotal=49`
+            `ops_requests,${eventHost},port=${port} requestsTotal=94,requestsDisconnects=1,requests200=61 ${expectedTimestamp}`,
+            `ops_concurrents,${eventHost},port=${port} concurrents=23i ${expectedTimestamp}`,
+            `ops_responseTimes,${eventHost},port=${port} avg=990,max=1234 ${expectedTimestamp}`
         ].join('\n');
     });
-    return expectedBaseMessage + '\n' + loadOpsEvents.join('\n');
+    const socketEvent = `ops_sockets,${eventHost} httpTotal=19,httpsTotal=49 ${expectedTimestamp}`;
+    return expectedBaseMessage + '\n' + loadOpsEvents.join('\n') + '\n' + socketEvent;
 };
 
 const testOpsEventBase = JSON.stringify({
     event: 'ops',
-    timestamp: 1485996802647,
+    timestamp: testTimestamp,
     host: testHost,
     pid: testPid,
     os: {

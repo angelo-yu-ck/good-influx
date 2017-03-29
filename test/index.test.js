@@ -72,7 +72,7 @@ const mocks = {
 
                 // TODO: Find the correct number of events
                 // Because threshold is 5, expect ___ events to be sent at a time
-                expect(dataRows.length).to.equal(10);
+                expect(dataRows.length).to.equal(15);
 
                 res.end();
                 if (hitCount >= 2) {
@@ -92,8 +92,8 @@ const mocks = {
             const splitMessage = msg.toString().split('\n');
 
             // TODO: Find correct value
-            // Because threshold is 5, expect 5 events to be sent at a time
-            expect(splitMessage.length).to.equal(10);
+            // Because threshold is 5, expect ___ events to be sent at a time
+            expect(splitMessage.length).to.equal(15);
             if (hitCount >= 2) {
                 server.close(done);
             }
