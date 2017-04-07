@@ -72,7 +72,6 @@ const mocks = {
             req.on('end', () => {
                 hitCount += 1;
                 const dataRows = data.split('\n');
-                console.log(dataRows.length);
                 // Because threshold is 5, expect 5 events to be sent at a time
                 expect(dataRows.length).to.equal(5);
                 dataRows.forEach((datum) => {
