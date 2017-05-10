@@ -82,7 +82,7 @@ describe('ops', () => {
         done();
     });
     it('Two ports => two events created', (done) => {
-        let testEvent = JSON.parse(testOpsEventBase);
+        const testEvent = JSON.parse(testOpsEventBase);
         testEvent.load.requests['8081'] = testEvent.load.requests['8080'];
         testEvent.load.concurrents['8081'] = testEvent.load.concurrents['8080'];
         testEvent.load.responseTimes['8081'] = testEvent.load.responseTimes['8080'];
@@ -102,7 +102,7 @@ describe('ops_responseTimes avg max', () => {
         done();
     });
     it('avg and max are both numbers => avg and max shall be numbers', (done) => {
-        let testEvent = JSON.parse(testOpsEventBase);
+        const testEvent = JSON.parse(testOpsEventBase);
         testEvent.load.responseTimes['8080'].avg = 123;
         testEvent.load.responseTimes['8080'].max = '456';
         const formattedEvent = LineProtocol.format(testEvent, {});
