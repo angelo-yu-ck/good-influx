@@ -36,16 +36,53 @@ const testEvent = {
         delay: 0.07090700045228004
     },
     load: {
-        requests: {},
-        concurrents: { '8080': 0 },
-        responseTimes: {}
+        requests: {
+            8080: {
+                total: 9,
+                disconnects: 0,
+                statusCodes: {
+                    200: 9
+                }
+            }
+        },
+        concurrents: { 8080: 1 },
+        responseTimes: {
+            8080: {
+                avg: 999,
+                max: 2222
+            }
+        },
+        sockets: {
+            http: {
+                total: 0
+            },
+            https: {
+                total: 2
+            }
+        }
     }
 };
-/* eslint max-len: ["error", 440, 4] */
-const expectedMessage = [
-    'ops,host=mytesthost,pid=9876 os.cpu1m=1.8408203125,os.cpu5m=1.44287109375,os.cpu15m=1.15234375,os.freemem=162570240i,os.totalmem=6089818112i,os.uptime=11546i,proc.delay=0.07090700045228004,proc.heapTotal=41546080i,proc.heapUsed=27708712i,proc.rss=55812096i,proc.uptime=18.192,testing="superClutch" 123456789000000',
-    'ops_concurrents,host=mytesthost,pid=9876 port=8080,concurrents=0,testing="superClutch" 123456789000000'
-].join('\n');
+
+/**
+ * Checking that the events sent to InfluxDB:
+ *  1) Starts with "ops"
+ *  2) Contains the custom metadata specified
+ *
+ * Not very comprehensive validation of the events in this test since more comprehensive testing
+ * is done in line-protocol.test.js.
+ *
+ * @param [String] responseData
+ */
+const validateResponses = (responseData) => {
+    const dataRows = responseData.split('\n');
+    // Because threshold is 5, expect 5 events to be sent at a time
+    // Since 5 influx events are emitted per ops event, expect length to equal 25
+    expect(dataRows.length).to.equal(25);
+    dataRows.forEach((datum) => {
+        expect(datum).to.match(/^ops/);
+        expect(datum).to.match(/testing="superClutch"/);
+    });
+};
 
 const mocks = {
     readStream() {
@@ -71,12 +108,7 @@ const mocks = {
             });
             req.on('end', () => {
                 hitCount += 1;
-                const dataRows = data.split('\n');
-                // Because threshold is 5, expect 5 events to be sent at a time
-                expect(dataRows.length).to.equal(5);
-                dataRows.forEach((datum) => {
-                    expect(datum).to.equal(expectedMessage);
-                });
+                validateResponses(data);
 
                 res.end();
                 if (hitCount >= 2) {
@@ -93,13 +125,8 @@ const mocks = {
         const server = Dgram.createSocket('udp4');
         server.on('message', (msg) => {
             hitCount += 1;
-            const splitMessage = msg.toString().split('\n');
+            validateResponses(msg.toString());
 
-            // Because threshold is 5, expect 5 events to be sent at a time
-            expect(splitMessage.length).to.equal(5);
-            splitMessage.forEach((msgRow) => {
-                expect(msgRow).to.equal(expectedMessage);
-            });
             if (hitCount >= 2) {
                 server.close(done);
             }
