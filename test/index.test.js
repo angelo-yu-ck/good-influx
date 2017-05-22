@@ -75,11 +75,12 @@ const testEvent = {
  *
  * @param [String] responseData
  */
-const validateResponses = (responseData) => {
+const validateResponses = (responseData, expectedEvents) => {
+    const expectedLength = expectedEvents || 25;
     const dataRows = responseData.split('\n');
     // Because threshold is 5, expect 5 events to be sent at a time
     // Since 5 influx events are emitted per ops event, expect length to equal 25
-    expect(dataRows.length).to.equal(25);
+    expect(dataRows.length).to.equal(expectedLength);
     dataRows.forEach((datum) => {
         expect(datum).to.match(/^ops/);
         expect(datum).to.match(/testing="superClutch"/);
@@ -121,12 +122,12 @@ const mocks = {
         return server;
     },
 
-    getUdpServer(done) {
+    getUdpServer(expectedNumberOfEvents, done) {
         let hitCount = 0;
         const server = Dgram.createSocket('udp4');
         server.on('message', (msg) => {
             hitCount += 1;
-            validateResponses(msg.toString());
+            validateResponses(msg.toString(), expectedNumberOfEvents);
 
             if (hitCount >= 2) {
                 server.close(done);
@@ -138,43 +139,86 @@ const mocks = {
 };
 
 describe('GoodInflux', () => {
-    it('Http URL => Sends events in a stream to HTTP server', (done) => {
-        const server = mocks.getHttpServer(done);
-        const stream = mocks.readStream();
+    describe('Http URL =>', () => {
+        it('Sends events in a stream to HTTP server', (done) => {
+            const server = mocks.getHttpServer(done);
+            const stream = mocks.readStream();
 
-        server.listen(0, '127.0.0.1', () => {
-            const reporter = new GoodInflux(mocks.getUri(server, 'http'), {
-                threshold: 5,
-                metadata: { testing: 'superClutch' }
+            server.listen(0, '127.0.0.1', () => {
+                const reporter = new GoodInflux(mocks.getUri(server, 'http'), {
+                    threshold: 5,
+                    metadata: { testing: 'superClutch' }
+                });
+
+                stream.pipe(reporter);
+
+                // Important to send 10 events. Threshold is 5, so two batches of events are sent.
+                // Sending two batches proves that the callback is being passed properly to Wreck.request.
+                for (let i = 0; i < 10; i += 1) {
+                    stream.push(testEvent);
+                }
             });
-
-            stream.pipe(reporter);
-
-            // Important to send 10 events. Threshold is 5, so two batches of events are sent.
-            // Sending two batches proves that the callback is being passed properly to Wreck.request.
-            for (let i = 0; i < 10; i += 1) {
-                stream.push(testEvent);
-            }
         });
     });
 
-    it('Udp URL => Sends events in a stream to UDP server', (done) => {
-        const server = mocks.getUdpServer(done);
-        const stream = mocks.readStream();
+    describe('Udp URL =>', () => {
+        it('Threshold not set => Sends 25 events in a stream to UDP server', (done) => {
+            const server = mocks.getUdpServer(25, done);
+            const stream = mocks.readStream();
 
-        server.on('listening', () => {
-            const reporter = new GoodInflux(mocks.getUri(server, 'udp'), {
-                threshold: 5,
-                metadata: { testing: 'superClutch' }
+            server.on('listening', () => {
+                const reporter = new GoodInflux(mocks.getUri(server, 'udp'), {
+                    metadata: { testing: 'superClutch' }
+                });
+
+                stream.pipe(reporter);
+
+                // Important to send 10 events. Threshold is 5, so two batches of events are sent.
+                // Sending two batches proves that the callback is being passed properly to this._udpClient.send.
+                for (let i = 0; i < 10; i += 1) {
+                    stream.push(testEvent);
+                }
             });
+        });
 
-            stream.pipe(reporter);
+        it('Threshold of 3 => Sends 15 events in a stream to UDP server', (done) => {
+            const server = mocks.getUdpServer(15, done);
+            const stream = mocks.readStream();
 
-            // Important to send 10 events. Threshold is 5, so two batches of events are sent.
-            // Sending two batches proves that the callback is being passed properly to this._udpClient.send.
-            for (let i = 0; i < 10; i += 1) {
-                stream.push(testEvent);
-            }
+            server.on('listening', () => {
+                const reporter = new GoodInflux(mocks.getUri(server, 'udp'), {
+                    threshold: 3,
+                    metadata: { testing: 'superClutch' }
+                });
+
+                stream.pipe(reporter);
+
+                // Important to send 6 events. Threshold is 3, so two batches of events are sent.
+                // Sending two batches proves that the callback is being passed properly to this._udpClient.send.
+                for (let i = 0; i < 6; i += 1) {
+                    stream.push(testEvent);
+                }
+            });
+        });
+
+        it('Threshold of 13 => Sends 25 events in a stream to UDP server', (done) => {
+            const server = mocks.getUdpServer(25, done);
+            const stream = mocks.readStream();
+
+            server.on('listening', () => {
+                const reporter = new GoodInflux(mocks.getUri(server, 'udp'), {
+                    threshold: 13,
+                    metadata: { testing: 'superClutch' }
+                });
+
+                stream.pipe(reporter);
+
+                // Important to send 10 events. Threshold is 5, so two batches of events are sent.
+                // Sending two batches proves that the callback is being passed properly to this._udpClient.send.
+                for (let i = 0; i < 10; i += 1) {
+                    stream.push(testEvent);
+                }
+            });
         });
     });
 
