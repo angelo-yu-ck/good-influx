@@ -64,12 +64,14 @@ const testEvent = {
 };
 
 /**
+ * TODO: Find some way to make sure this has actually been hit
+ *
  * Checking that the events sent to InfluxDB:
  *  1) Starts with "ops"
  *  2) Contains the custom metadata specified
  *
- * Not very comprehensive validation of the events in this test since more comprehensive testing
- * is done in line-protocol.test.js.
+ * Not very comprehensive validation of the events in this test since more comprehensive
+ * testing is done in line-protocol.test.js.
  *
  * @param [String] responseData
  */
@@ -87,8 +89,7 @@ const validateResponses = (responseData) => {
 const mocks = {
     readStream() {
         const result = new Stream.Readable({ objectMode: true });
-        // Need to overwrite this function. For some reason all it does is Error('not implemented')  Very helpful, no?
-        /* eslint-disable no-empty-function */
+        // Need to overwrite this function. For some reason all it does is Error('not implemented').
         result._read = () => {};
         return result;
     },
