@@ -12,11 +12,18 @@ const expect = Code.expect;
 
 const testHost = 'myservice.awesome.com';
 
-const getExpectedMessage = (ports, metadata) => {
+const getExpectedMessage = (ports, metadata, responseTimesAvg, responseTimesMax) => {
     const plusMetadata = metadata || '';
-    /* eslint max-len: ["error", 440, 4] */
+    const avg = isNaN(responseTimesAvg) ? 990 : responseTimesAvg;
+    const max = isNaN(responseTimesMax) ? 1234 : responseTimesMax;
     const eventHost = `host=${testHost},pid=9876`;
-    const expectedBaseMessage = `ops,${eventHost} os.cpu1m=3.05078125,os.cpu5m=2.11279296875,os.cpu15m=1.625,os.freemem=147881984i,os.totalmem=6089818112i,os.uptime=23489i,proc.delay=32.29,proc.heapTotal=47271936i,proc.heapUsed=26825384i,proc.rss=64290816i,proc.uptime=22.878${plusMetadata} 1485996802647000000`;
+    const expectedBaseMessage = [
+        `ops,${eventHost} os.cpu1m=3.05078125,os.cpu5m=2.11279296875,`,
+        'os.cpu15m=1.625,os.freemem=147881984i,os.totalmem=6089818112i,',
+        'os.uptime=23489i,proc.delay=32.29,proc.heapTotal=47271936i,',
+        'proc.heapUsed=26825384i,proc.rss=64290816i,',
+        `proc.uptime=22.878${plusMetadata} 1485996802647000000`
+    ].join('');
 
     const loadOpsRequestsEvents = ports.map((port) => {
         return `ops_requests,${eventHost},port=${port} requestsTotal=94,requestsDisconnects=1,requests200=61 1485996802647000000`;
@@ -25,7 +32,7 @@ const getExpectedMessage = (ports, metadata) => {
         return `ops_concurrents,${eventHost},port=${port} concurrents=23 1485996802647000000`;
     }).join('\n');
     const loadOpsResponseTimesEvents = ports.map((port) => {
-        return `ops_responseTimes,${eventHost},port=${port} avg=990,max=1234 1485996802647000000`;
+        return `ops_responseTimes,${eventHost},port=${port} avg=${avg},max=${max} 1485996802647000000`;
     }).join('\n');
     const loadOpsSocketsEvents = `ops_sockets,${eventHost} httpTotal=19,httpsTotal=49 1485996802647000000`;
     const finalOpsEvents = [loadOpsRequestsEvents, loadOpsConcurrentsEvents, loadOpsResponseTimesEvents, loadOpsSocketsEvents];
@@ -58,22 +65,6 @@ const testOpsEventBase = JSON.stringify({
     }
 });
 
-const getOpsResponseTimesExpectedMessage = (ports, metadata, avg, max) => {
-    const plusMetadata = metadata || '';
-    /* eslint max-len: ["error", 440, 4] */
-    const tags = `host=${testHost},pid=9876`;
-    const expectedBaseMessage = `ops,${tags} os.cpu1m=3.05078125,os.cpu5m=2.11279296875,os.cpu15m=1.625,os.freemem=147881984i,os.totalmem=6089818112i,os.uptime=23489i,proc.delay=32.29,proc.heapTotal=47271936i,proc.heapUsed=26825384i,proc.rss=64290816i,proc.uptime=22.878${plusMetadata} 1485996802647000000`;
-    const loadOpsEvents = ports.map((port) => {
-        return [
-            `ops_requests,${tags},port=${port} requestsTotal=94,requestsDisconnects=1,requests200=61 1485996802647000000`,
-            `ops_concurrents,${tags},port=${port} concurrents=23 1485996802647000000`,
-            `ops_responseTimes,${tags},port=${port} avg=${avg},max=${max} 1485996802647000000`,
-            `ops_sockets,${tags} httpTotal=19,httpsTotal=49 1485996802647000000`
-        ].join('\n');
-    });
-    return expectedBaseMessage + '\n' + loadOpsEvents.join('\n');
-};
-
 describe('ops', () => {
     it('One port => two events created', (done) => {
         const testEvent = JSON.parse(testOpsEventBase);
@@ -98,7 +89,7 @@ describe('ops_responseTimes avg max', () => {
         testEvent.load.responseTimes['8080'].avg = null;
         testEvent.load.responseTimes['8080'].max = 'abc';
         const formattedEvent = LineProtocol.format(testEvent, {});
-        expect(formattedEvent).to.equal(getOpsResponseTimesExpectedMessage(['8080'],null,0,0));
+        expect(formattedEvent).to.equal(getExpectedMessage(['8080'],null,0,0));
         done();
     });
     it('avg and max are both numbers => avg and max shall be numbers', (done) => {
@@ -106,7 +97,7 @@ describe('ops_responseTimes avg max', () => {
         testEvent.load.responseTimes['8080'].avg = 123;
         testEvent.load.responseTimes['8080'].max = '456';
         const formattedEvent = LineProtocol.format(testEvent, {});
-        expect(formattedEvent).to.equal(getOpsResponseTimesExpectedMessage(['8080'],null,123,456));
+        expect(formattedEvent).to.equal(getExpectedMessage(['8080'],null,123,456));
         done();
     });
 });
